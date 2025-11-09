@@ -5,14 +5,28 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import Auctions from "./pages/Auctions";
+import AuctionDetail from "./pages/AuctionDetail";
+import Dashboard from "./pages/Dashboard";
+import SellItem from "./pages/SellItem";
+import MyAuctions from "./pages/MyAuctions";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminAuctions from "./pages/admin/AdminAuctions";
+import AdminUsers from "./pages/admin/AdminUsers";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path="/auctions" component={Auctions} />
+      <Route path="/auction/:id" component={AuctionDetail} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/sell" component={SellItem} />
+      <Route path="/my-auctions" component={MyAuctions} />
+      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/auctions" component={AdminAuctions} />
+      <Route path="/admin/users" component={AdminUsers} />
       <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
