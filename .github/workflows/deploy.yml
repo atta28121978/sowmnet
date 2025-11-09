@@ -1,4 +1,4 @@
-name: Build and deploy to GitHub Pages
+name: Build and deploy to GitHub Pages (diagnostic)
 
 on:
   push:
@@ -18,6 +18,13 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Print node and pnpm versions
+        run: |
+          echo "== versions =="
+          node --version || true
+          npm --version || true
+          pnpm --version || true
 
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
@@ -42,6 +49,13 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Show dist contents (diagnostic)
+        run: |
+          echo "---- ls -la ./dist ----"
+          ls -la ./dist || echo "dist directory not found"
+          echo "---- find ./dist (recursive) ----"
+          find ./dist -maxdepth 5 -type f -print || true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v1
