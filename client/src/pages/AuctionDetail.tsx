@@ -5,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Gavel, Clock, MapPin, Eye, Heart, TrendingUp, User } from "lucide-react";
+import { Gavel, Clock, MapPin, Eye, Heart, TrendingUp, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -20,6 +20,7 @@ export default function AuctionDetail() {
   const { t, language } = useLanguage();
   const { isAuthenticated } = useAuth();
   const [bidAmount, setBidAmount] = useState("");
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const { data, isLoading, refetch } = trpc.auction.getById.useQuery(
     { id: auctionId },
@@ -132,6 +133,7 @@ export default function AuctionDetail() {
   const { auction, images, bids } = data;
   const auctionLocation = location?.find(l => l.id === auction.locationId);
   const minBid = auction.currentPrice + auction.bidIncrement;
+  const currentImage = images && images.length > 0 ? images[selectedImageIndex] : null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -139,9 +141,73 @@ export default function AuctionDetail() {
 
       <div className="container py-8 flex-1">
         {/* Image Gallery */}
-        <div className="aspect-video bg-muted rounded-lg mb-8 flex items-center justify-center">
-          <Gavel className="h-32 w-32 text-muted-foreground" />
+        <div className="relative bg-muted rounded-lg mb-8 overflow-hidden aspect-video flex items-center justify-center">
+          {currentImage ? (
+            <img
+              src={currentImage.imageUrl}
+              alt={language === 'ar' ? auction.titleAr : auction.titleEn}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <Gavel className="h-32 w-32 text-muted-foreground" />
+          )}
+
+          {/* Navigation Arrows */}
+          {images && images.length > 1 && (
+            <>
+              <button
+                onClick={() =>
+                  setSelectedImageIndex((prev) =>
+                    prev === 0 ? images.length - 1 : prev - 1
+                  )
+                }
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={() =>
+                  setSelectedImageIndex((prev) =>
+                    prev === images.length - 1 ? 0 : prev + 1
+                  )
+                }
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </>
+          )}
+
+          {/* Image Counter */}
+          {images && images.length > 0 && (
+            <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded text-sm">
+              {selectedImageIndex + 1} / {images.length}
+            </div>
+          )}
         </div>
+
+        {/* Thumbnail Gallery */}
+        {images && images.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto mb-8 pb-2">
+            {images.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => setSelectedImageIndex(idx)}
+                className={`flex-shrink-0 w-24 h-24 rounded border-2 overflow-hidden transition ${
+                  selectedImageIndex === idx
+                    ? 'border-primary'
+                    : 'border-muted hover:border-muted-foreground'
+                }`}
+              >
+                <img
+                  src={img.imageUrl}
+                  alt={`Thumbnail ${idx + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -156,7 +222,7 @@ export default function AuctionDetail() {
                   {auction.status}
                 </Badge>
               </div>
-              <div className="flex items-center gap-4 text-muted-foreground">
+              <div className="flex items-center gap-4 text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1">
                   <Eye className="h-4 w-4" />
                   <span className="text-sm">{auction.viewCount} {t("views", "مشاهدة")}</span>

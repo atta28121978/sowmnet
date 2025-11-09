@@ -19,7 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "lucide-react";
+import { ImageUpload } from "@/components/ImageUpload";
+
+interface ImageFile {
+  id: string;
+  file: File;
+  preview: string;
+  uploading?: boolean;
+}
 
 export default function SellItem() {
   const { t, language } = useLanguage();
@@ -42,11 +49,51 @@ export default function SellItem() {
     endTime: "",
   });
 
+  const [images, setImages] = useState<ImageFile[]>([]);
+
   const { data: categories } = trpc.category.getAll.useQuery();
   const { data: locations } = trpc.location.getAll.useQuery();
 
+  const uploadImageMutation = trpc.image.uploadToS3.useMutation();
+  const saveImageMetadataMutation = trpc.image.saveMetadata.useMutation();
+
   const createAuctionMutation = trpc.auction.create.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (auctionData) => {
+      // Upload images if any
+      if (images.length > 0) {
+        for (let i = 0; i < images.length; i++) {
+          const image = images[i];
+          try {
+            // Get presigned URL
+            const { url, fileKey } = await uploadImageMutation.mutateAsync({
+              fileName: image.file.name,
+              fileType: image.file.type,
+              fileSize: image.file.size,
+            });
+
+            // Upload to S3
+            await fetch(url, {
+              method: 'PUT',
+              body: image.file,
+              headers: {
+                'Content-Type': image.file.type,
+              },
+            });
+
+            // Save metadata
+            await saveImageMetadataMutation.mutateAsync({
+              auctionId: auctionData.id,
+              imageUrl: url.split('?')[0], // Remove query params
+              imageKey: fileKey,
+              displayOrder: i,
+            });
+          } catch (error) {
+            console.error('Error uploading image:', error);
+            toast.error(t("Error uploading image", "خطأ في تحميل الصورة"));
+          }
+        }
+      }
+
       toast.success(t(
         "Auction created successfully! It will be reviewed by our team.",
         "تم إنشاء المزاد بنجاح! سيتم مراجعته من قبل فريقنا."
@@ -85,6 +132,11 @@ export default function SellItem() {
 
     if (!formData.startingPrice || !formData.startTime || !formData.endTime) {
       toast.error(t("Please fill all required fields", "يرجى ملء جميع الحقول المطلوبة"));
+      return;
+    }
+
+    if (images.length === 0) {
+      toast.error(t("Please upload at least one image", "يرجى تحميل صورة واحدة على الأقل"));
       return;
     }
 
@@ -202,6 +254,20 @@ export default function SellItem() {
                     />
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Images */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("Item Images", "صور العنصر")} *</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ImageUpload
+                  onImagesChange={setImages}
+                  maxImages={10}
+                  maxFileSize={10}
+                />
               </CardContent>
             </Card>
 
@@ -342,9 +408,9 @@ export default function SellItem() {
                 type="submit"
                 size="lg"
                 className="flex-1"
-                disabled={createAuctionMutation.isPending}
+                disabled={createAuctionMutation.isPending || uploadImageMutation.isPending}
               >
-                {createAuctionMutation.isPending
+                {createAuctionMutation.isPending || uploadImageMutation.isPending
                   ? t("Creating...", "جاري الإنشاء...")
                   : t("Create Auction", "إنشاء مزاد")}
               </Button>

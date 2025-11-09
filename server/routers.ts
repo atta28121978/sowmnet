@@ -191,7 +191,7 @@ export const appRouter = router({
           currentPrice: input.startingPrice,
           status: 'pending_approval',
         });
-        return { success: true, auctionId: result[0].insertId };
+        return { success: true, id: result[0].insertId, auctionId: result[0].insertId };
       }),
     
     // Update auction status (admin)
@@ -348,6 +348,56 @@ export const appRouter = router({
     getUnreadCount: protectedProcedure.query(async ({ ctx }) => {
       return await db.getUnreadNotificationCount(ctx.user.id);
     }),
+  }),
+
+  image: router({
+    uploadToS3: protectedProcedure
+      .input(z.object({
+        fileName: z.string(),
+        fileType: z.string(),
+        fileSize: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substr(2, 9);
+        const fileKey = `auctions/${ctx.user.id}/${timestamp}-${random}-${input.fileName}`;
+        const { url } = await db.getPresignedUploadUrl(fileKey, input.fileType);
+        return { url, fileKey };
+      }),
+
+    saveMetadata: protectedProcedure
+      .input(z.object({
+        auctionId: z.number(),
+        imageUrl: z.string().url(),
+        imageKey: z.string(),
+        displayOrder: z.number().default(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const auction = await db.getAuctionById(input.auctionId);
+        if (!auction || auction.sellerId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        await db.saveAuctionImage({
+          auctionId: input.auctionId,
+          imageUrl: input.imageUrl,
+          imageKey: input.imageKey,
+          displayOrder: input.displayOrder,
+        });
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ imageId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const image = await db.getAuctionImageById(input.imageId);
+        if (!image) throw new TRPCError({ code: 'NOT_FOUND' });
+        const auction = await db.getAuctionById(image.auctionId);
+        if (!auction || auction.sellerId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        await db.deleteAuctionImage(input.imageId);
+        return { success: true };
+      }),
   }),
 });
 

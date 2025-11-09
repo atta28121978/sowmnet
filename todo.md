@@ -81,3 +81,13 @@
 - [ ] Search with filters
 - [ ] Auction view counter
 - [ ] Mobile responsive design
+
+## Phase 7: Image Upload Feature
+- [x] Create image upload component with drag-and-drop
+- [x] Integrate S3 storage for image uploads
+- [x] Add image preview functionality
+- [x] Implement image validation (size, format)
+- [x] Update auction creation form with image upload
+- [x] Add image gallery to auction detail page
+- [x] Implement image deletion functionality
+- [x] Add image ordering/reordering

@@ -19,6 +19,7 @@ import {
   InsertNotification,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { storagePut } from './storage';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -441,4 +442,35 @@ export async function getUnreadNotificationCount(userId: number) {
     ));
   
   return result[0]?.count || 0;
+}
+
+// Image operations
+export async function saveAuctionImage(data: {
+  auctionId: number;
+  imageUrl: string;
+  imageKey: string;
+  displayOrder: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(auctionImages).values({
+    auctionId: data.auctionId,
+    imageUrl: data.imageUrl,
+    fileKey: data.imageKey,
+    displayOrder: data.displayOrder,
+  });
+}
+
+export async function getAuctionImageById(imageId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(auctionImages).where(eq(auctionImages.id, imageId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getPresignedUploadUrl(fileKey: string, contentType: string) {
+  const { url } = await storagePut(fileKey, Buffer.alloc(0), contentType);
+  return { url, fileKey };
 }
