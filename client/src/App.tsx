@@ -13,19 +13,39 @@ import MyAuctions from "./pages/MyAuctions";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminAuctions from "./pages/admin/AdminAuctions";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AboutUs from "./pages/AboutUs";
+import HowItWorks from "./pages/HowItWorks";
+import ContactUs from "./pages/ContactUs";
+import TermsConditions from "./pages/TermsConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import MyBids from "./pages/MyBids";
+import MyWatchlist from "./pages/MyWatchlist";
+import MyWinnings from "./pages/MyWinnings";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminLocations from "./pages/admin/AdminLocations";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path="/about" component={AboutUs} />
+      <Route path="/how-it-works" component={HowItWorks} />
+      <Route path="/contact" component={ContactUs} />
+      <Route path="/terms" component={TermsConditions} />
+      <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/auctions" component={Auctions} />
       <Route path="/auction/:id" component={AuctionDetail} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/sell" component={SellItem} />
       <Route path="/my-auctions" component={MyAuctions} />
+      <Route path="/my-bids" component={MyBids} />
+      <Route path="/my-watchlist" component={MyWatchlist} />
+      <Route path="/my-winnings" component={MyWinnings} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/auctions" component={AdminAuctions} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/categories" component={AdminCategories} />
+      <Route path="/admin/locations" component={AdminLocations} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
